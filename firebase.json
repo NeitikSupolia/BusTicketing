@@ -6,8 +6,14 @@
       ".firebaserc",
       "**/.*",
       "**/node_modules/**",
-      "*.bat",
-      "*.ps1"
+      "**/*.exe",
+      "**/*.bat",
+      "**/*.ps1",
+      "**/*.log",
+      "server.js",
+      "package.json",
+      "package-lock.json",
+      "README.md"
     ],
     "rewrites": [
       {
