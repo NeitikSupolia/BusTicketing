@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NexaBus Express | Luxury Intercity Coach Booking & Live Tracking</title>
+  <title>MyJourney | Luxury Intercity Coach Booking & Live Tracking</title>
   <meta name="description" content="Book ultra-luxurious sleeper and executive intercity buses with live GPS tracking, instant boarding passes, and zero cancellation fee guarantee.">
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
   
@@ -29,9 +29,9 @@
     <div class="container nav-wrapper">
       <!-- Brand Logo -->
       <a href="#" class="brand-logo" id="brandLogoLink">
-        <img src="assets/logo.jpg" alt="NexaBus Logo" class="brand-icon">
+        <img src="assets/logo.jpg" alt="MyJourney Logo" class="brand-icon">
         <div class="brand-text">
-          <span class="brand-title">NEXABUS</span>
+          <span class="brand-title">MYJOURNEY</span>
           <span class="brand-tag">Luxury Transit</span>
         </div>
       </a>
@@ -46,12 +46,33 @@
         <li><a href="#safetySection" class="nav-link"><i class="fa-solid fa-shield-heart"></i> Safety First</a></li>
       </ul>
 
-      <!-- Action Items (Country, Currency, Theme, Firebase Status, Bookings) -->
+      <!-- Action Items (Auth, Country, Currency, Theme, Firebase Status, Bookings) -->
       <div class="nav-actions">
         <!-- Firebase Cloud Database Status Badge -->
         <div class="firebase-status-pill" id="firebaseStatusBadge" title="Connecting to Firebase Project: apps-cafd4...">
           <span class="fb-dot fb-dot-online"></span>
           <span class="fb-text"><i class="fa-solid fa-cloud"></i> Cloud DB</span>
+        </div>
+
+        <!-- Auth Buttons: Sign In & Sign Up (Shown when logged out) -->
+        <div class="auth-buttons-group" id="navAuthGroup">
+          <button class="btn-auth-signin" id="btnNavSignIn" onclick="openAuthModal('signin')" aria-label="Sign In">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Sign In</span>
+          </button>
+          <button class="btn-auth-signup" id="btnNavSignUp" onclick="openAuthModal('signup')" aria-label="Sign Up">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Sign Up</span>
+          </button>
+        </div>
+
+        <!-- Logged-in User Profile Badge (Shown when authenticated) -->
+        <div class="user-profile-pill" id="navUserPill" style="display: none;">
+          <div class="user-avatar" id="navUserAvatar">U</div>
+          <span class="user-name" id="navUserName">Traveler</span>
+          <button class="btn-logout" id="btnNavLogout" onclick="handleUserLogout()" title="Sign Out of MyJourney">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
         </div>
 
         <!-- Global Country Selector Button -->
@@ -468,6 +489,96 @@
     </div>
   </main>
 
+  <!-- Authentication Modal (Sign In / Sign Up) -->
+  <div class="modal-overlay" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <div class="modal-dialog" style="max-width: 460px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="authModalTitle">
+            <i class="fa-solid fa-user-shield" style="color: var(--cyan-accent);"></i> <span id="authModalHeaderText">Sign In to MyJourney</span>
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            Access your bookings, boarding passes, and express checkout.
+          </p>
+        </div>
+        <button class="btn-close-modal" onclick="closeAuthModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Booking Enforcement Callout -->
+        <div class="auth-booking-callout" id="authBookingCallout" style="display: none;">
+          <i class="fa-solid fa-lock" style="font-size: 1.1rem; color: #fbbf24;"></i>
+          <span>Please sign in or create an account to reserve your selected seats.</span>
+        </div>
+
+        <!-- Auth Tabs (Sign In / Sign Up) -->
+        <div class="auth-tabs-nav">
+          <button class="auth-tab-btn active" id="tabAuthSignIn" onclick="switchAuthTab('signin')">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign In
+          </button>
+          <button class="auth-tab-btn" id="tabAuthSignUp" onclick="switchAuthTab('signup')">
+            <i class="fa-solid fa-user-plus"></i> Create Account
+          </button>
+        </div>
+
+        <!-- Auth Form -->
+        <form id="authForm" onsubmit="handleAuthSubmit(event)">
+          <!-- Name Field (Only for Sign Up) -->
+          <div class="auth-form-group" id="authNameGroup" style="display: none;">
+            <label for="authNameInput">Full Name *</label>
+            <div class="auth-input-wrapper">
+              <i class="fa-solid fa-user input-icon"></i>
+              <input type="text" class="auth-input" id="authNameInput" placeholder="e.g. Neitik Supolia" autocomplete="name">
+            </div>
+          </div>
+
+          <!-- Email Field -->
+          <div class="auth-form-group">
+            <label for="authEmailInput">Email Address *</label>
+            <div class="auth-input-wrapper">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" class="auth-input" id="authEmailInput" placeholder="passenger@example.com" required autocomplete="email">
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="auth-form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="authPasswordInput" style="margin-bottom: 0;">Password *</label>
+              <a href="javascript:void(0)" onclick="handleForgotPassword()" style="font-size: 0.75rem; color: var(--cyan-accent); text-decoration: none;" id="authForgotLink">Forgot?</a>
+            </div>
+            <div class="auth-input-wrapper">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" class="auth-input" id="authPasswordInput" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn-submit-auth" id="btnAuthSubmit">
+            <i class="fa-solid fa-arrow-right-to-bracket" id="authSubmitIcon"></i>
+            <span id="authSubmitText">Sign In to MyJourney</span>
+          </button>
+        </form>
+
+        <div class="auth-divider">or continue with</div>
+
+        <!-- Google One-Click Login -->
+        <button type="button" class="btn-google-auth" onclick="handleGoogleSignIn()">
+          <i class="fa-brands fa-google" style="color: #ea4335;"></i>
+          <span>Continue with Google</span>
+        </button>
+
+        <!-- Fast Guest Login for Instant Booking -->
+        <button type="button" class="btn-guest-auth" onclick="handleGuestSignIn()">
+          <i class="fa-solid fa-bolt-lightning" style="color: #f59e0b;"></i>
+          <span>Instant Traveler Login (Quick Demo)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Passenger Details Modal -->
   <div class="modal-overlay" id="passengerModal" role="dialog" aria-modal="true" aria-labelledby="passengerModalTitle">
     <div class="modal-dialog">
@@ -856,7 +967,7 @@
     <div class="container footer-content">
       <div style="display: flex; align-items: center; gap: 10px;">
         <img src="assets/logo.jpg" alt="Logo" style="width: 28px; height: 28px; border-radius: 6px;">
-        <span style="font-weight: 700; color: var(--text-main);">NexaBus Technologies Inc.</span>
+        <span style="font-weight: 700; color: var(--text-main);">MyJourney Technologies Inc.</span>
         <span>&copy; 2026 All rights reserved.</span>
       </div>
       <ul class="footer-links">

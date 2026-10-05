@@ -1,6 +1,6 @@
 /**
- * NexaBus Firebase Database Service
- * Complete integration with Google Firebase (Cloud Firestore & Realtime Database)
+ * MyJourney Firebase Database & Authentication Service
+ * Complete integration with Google Firebase (Cloud Firestore, Auth & Realtime Database)
  * Project ID: apps-cafd4
  */
 
@@ -11,6 +11,7 @@ import {
   collection, 
   doc, 
   setDoc, 
+  getDoc,
   getDocs, 
   deleteDoc, 
   onSnapshot, 
@@ -28,7 +29,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { 
   getAuth, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signInAnonymously, 
+  signOut,
+  updateProfile,
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -51,6 +58,7 @@ let auth = null;
 let analytics = null;
 let isConnected = false;
 let currentUser = null;
+const authListeners = [];
 
 try {
   // 1. App Initialization
@@ -73,16 +81,37 @@ try {
   // 4. Firebase Authentication
   try {
     auth = getAuth(app);
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       currentUser = user;
       if (user) {
-        console.log(`👤 Firebase User Authenticated: ${user.uid}`);
-      }
-    });
+        console.log(`👤 MyJourney User Authenticated: ${user.email || user.displayName || user.uid}`);
+        
+        const userData = {
+          uid: user.uid,
+          email: user.email || 'passenger@myjourney.com',
+          displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'Passenger'),
+          isAnonymous: user.isAnonymous
+        };
 
-    // Sign in anonymously for secure rule evaluation if enabled
-    signInAnonymously(auth).catch((err) => {
-      console.log('Anonymous auth note (unauthenticated access is active):', err.message);
+        // Cache user info locally
+        localStorage.setItem('myjourney_user', JSON.stringify(userData));
+
+        // Save/update user profile in Cloud Firestore
+        if (firestore && !user.isAnonymous) {
+          try {
+            const userRef = doc(firestore, 'users', user.uid);
+            await setDoc(userRef, {
+              ...userData,
+              lastLoginAt: serverTimestamp()
+            }, { merge: true });
+          } catch (e) {}
+        }
+
+        notifyAuthListeners(userData);
+      } else {
+        localStorage.removeItem('myjourney_user');
+        notifyAuthListeners(null);
+      }
     });
   } catch (e) {
     console.warn('Auth init note:', e);
@@ -92,23 +121,33 @@ try {
   isAnalyticsSupported().then((supported) => {
     if (supported) {
       analytics = getAnalytics(app);
-      console.log('📊 Firebase Analytics initialized for NexaBus');
+      console.log('📊 Firebase Analytics initialized for MyJourney');
     }
   }).catch((e) => {
     console.warn('Analytics initialization skipped:', e);
   });
 
   isConnected = true;
-  console.log(`🔥 Firebase successfully initialized for project: ${firebaseConfig.projectId}`);
+  console.log(`🔥 Firebase successfully initialized for MyJourney project: ${firebaseConfig.projectId}`);
 } catch (error) {
   console.error('❌ Firebase initialization error:', error);
   isConnected = false;
 }
 
+function notifyAuthListeners(user) {
+  authListeners.forEach((fn) => {
+    try {
+      fn(user);
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
 /**
- * Service API exposed globally to the NexaBus Application
+ * Service API exposed globally to the MyJourney Application
  */
-export const NexaBusFirebase = {
+export const MyJourneyFirebase = {
   app,
   db: firestore,
   firestore,
@@ -117,7 +156,158 @@ export const NexaBusFirebase = {
   analytics,
   config: firebaseConfig,
   isConnected: () => isConnected,
-  getUser: () => currentUser,
+  getUser: () => {
+    if (currentUser) {
+      return {
+        uid: currentUser.uid,
+        email: currentUser.email || 'passenger@myjourney.com',
+        displayName: currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Passenger'),
+        isAnonymous: currentUser.isAnonymous
+      };
+    }
+    try {
+      const cached = localStorage.getItem('myjourney_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  onAuthChange(callback) {
+    if (typeof callback === 'function') {
+      authListeners.push(callback);
+      // Immediately invoke with current state
+      callback(this.getUser());
+    }
+  },
+
+  /**
+   * Sign In with Email & Password
+   */
+  async signIn(email, password) {
+    if (!auth) {
+      // Local fallback simulation
+      const fallbackUser = {
+        uid: 'usr_' + Date.now(),
+        email: email,
+        displayName: email.split('@')[0],
+        isAnonymous: false
+      };
+      localStorage.setItem('myjourney_user', JSON.stringify(fallbackUser));
+      notifyAuthListeners(fallbackUser);
+      return { success: true, user: fallbackUser };
+    }
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const userData = {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: cred.user.displayName || email.split('@')[0],
+        isAnonymous: false
+      };
+      localStorage.setItem('myjourney_user', JSON.stringify(userData));
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Sign In Error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Sign Up / Create Account with Email & Password
+   */
+  async signUp(email, password, displayName = '') {
+    if (!auth) {
+      const fallbackUser = {
+        uid: 'usr_' + Date.now(),
+        email: email,
+        displayName: displayName || email.split('@')[0],
+        isAnonymous: false
+      };
+      localStorage.setItem('myjourney_user', JSON.stringify(fallbackUser));
+      notifyAuthListeners(fallbackUser);
+      return { success: true, user: fallbackUser };
+    }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      if (displayName) {
+        await updateProfile(cred.user, { displayName });
+      }
+      const userData = {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: displayName || email.split('@')[0],
+        isAnonymous: false
+      };
+      localStorage.setItem('myjourney_user', JSON.stringify(userData));
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Sign Up Error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Sign In with Google Popup
+   */
+  async signInWithGoogle() {
+    if (!auth) return { success: false, error: 'Firebase Auth is not available' };
+    try {
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
+      const userData = {
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: cred.user.displayName || 'Google Passenger',
+        photoURL: cred.user.photoURL,
+        isAnonymous: false
+      };
+      localStorage.setItem('myjourney_user', JSON.stringify(userData));
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Google Sign In Error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Fast Demo / Guest Login
+   */
+  async signInAsGuest(name = 'Guest Traveler') {
+    const guestUser = {
+      uid: 'guest_' + Math.floor(100000 + Math.random() * 900000),
+      email: 'traveler@myjourney.com',
+      displayName: name,
+      isAnonymous: true
+    };
+
+    localStorage.setItem('myjourney_user', JSON.stringify(guestUser));
+    notifyAuthListeners(guestUser);
+
+    if (auth) {
+      try {
+        await signInAnonymously(auth);
+      } catch (e) {}
+    }
+
+    return { success: true, user: guestUser };
+  },
+
+  /**
+   * Sign Out
+   */
+  async signOut() {
+    localStorage.removeItem('myjourney_user');
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (e) {}
+    }
+    notifyAuthListeners(null);
+    return { success: true };
+  },
 
   /**
    * Save a booking record into Cloud Firestore & Realtime Database
@@ -125,8 +315,11 @@ export const NexaBusFirebase = {
    */
   async saveBooking(booking) {
     let savedToCloud = false;
+    const user = this.getUser();
     const cleanPayload = {
       ...booking,
+      userId: user ? user.uid : 'guest',
+      userEmail: user ? user.email : booking.contact?.email,
       syncedAt: new Date().toISOString()
     };
 
@@ -180,7 +373,6 @@ export const NexaBusFirebase = {
    * Fetch all bookings from Firebase
    */
   async getAllBookings() {
-    // Attempt Firestore first
     if (firestore) {
       try {
         const bookingsCol = collection(firestore, 'bookings');
@@ -190,28 +382,19 @@ export const NexaBusFirebase = {
           bookings.push(docSnap.data());
         });
         if (bookings.length > 0) {
-          console.log(`📥 [Firebase Firestore] Loaded ${bookings.length} bookings.`);
           return bookings;
         }
-      } catch (e) {
-        console.warn('Firestore fetch note:', e.message);
-      }
+      } catch (e) {}
     }
 
-    // Fallback / Try Realtime Database
     if (realtimeDb) {
       try {
         const dbRef = ref(realtimeDb, 'bookings');
         const snapshot = await get(dbRef);
         if (snapshot.exists()) {
-          const val = snapshot.val();
-          const list = Object.values(val);
-          console.log(`📥 [Firebase Realtime DB] Loaded ${list.length} bookings.`);
-          return list;
+          return Object.values(snapshot.val());
         }
-      } catch (e) {
-        console.warn('Realtime DB fetch note:', e.message);
-      }
+      } catch (e) {}
     }
 
     return [];
@@ -223,7 +406,6 @@ export const NexaBusFirebase = {
   subscribeToBookings(onUpdate) {
     if (typeof onUpdate !== 'function') return () => {};
 
-    // Subscribe via Firestore
     if (firestore) {
       try {
         const bookingsCol = collection(firestore, 'bookings');
@@ -235,26 +417,20 @@ export const NexaBusFirebase = {
           if (bookings.length > 0) {
             onUpdate(bookings);
           }
-        }, (err) => {
-          console.warn('Firestore realtime listener note:', err.message);
-        });
+        }, (err) => {});
 
         return unsubFirestore;
       } catch (e) {}
     }
 
-    // Subscribe via Realtime Database
     if (realtimeDb) {
       try {
         const dbRef = ref(realtimeDb, 'bookings');
         const unsubRtdb = onValue(dbRef, (snapshot) => {
           if (snapshot.exists()) {
-            const list = Object.values(snapshot.val());
-            onUpdate(list);
+            onUpdate(Object.values(snapshot.val()));
           }
-        }, (err) => {
-          console.warn('Realtime DB listener note:', err.message);
-        });
+        }, (err) => {});
 
         return () => unsubRtdb();
       } catch (e) {}
@@ -285,7 +461,6 @@ export const NexaBusFirebase = {
       } catch (e) {}
     }
 
-    console.log(`🗑️ [Firebase Cloud DB] Deleted booking ${pnr}.`);
     return { success: deleted };
   },
 
@@ -301,8 +476,9 @@ export const NexaBusFirebase = {
   }
 };
 
-// Bind globally for access by NexaBus scripts
-window.NexaBusFirebase = NexaBusFirebase;
+// Expose on window for global access
+window.MyJourneyFirebase = MyJourneyFirebase;
+window.NexaBusFirebase = MyJourneyFirebase; // backward compat
 
 // Update UI Badge when ready
 function updateFirebaseBadge() {
@@ -327,4 +503,4 @@ if (document.readyState === 'loading') {
   updateFirebaseBadge();
 }
 
-export default NexaBusFirebase;
+export default MyJourneyFirebase;

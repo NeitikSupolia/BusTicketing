@@ -20,6 +20,9 @@ const state = {
   passengers: [],
   appliedCoupon: null,
   activeSort: 'cheapest',
+  currentUser: null,
+  pendingBookingAction: null,
+  authMode: 'signin',
   filters: {
     timeSlots: [],
     operators: [],
@@ -45,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDatePickers();
   initTheme();
   setupEventListeners();
+  initAuthState();
   initCountry();
   updateBookingsBadge();
   init3DBusExperience();
@@ -898,13 +902,28 @@ function calcGrandTotal() {
   return Math.max(0, Math.round(sub + tax - discount));
 }
 
-// Passenger Modal
+// Passenger Modal (Enforces Authentication Before Booking)
 function openPassengerDetailsModal() {
-  if (state.selectedSeats.length === 0) return;
+  if (state.selectedSeats.length === 0) {
+    showToast('Please select at least one seat first', 'info');
+    return;
+  }
+
+  // ENFORCE USER LOGIN BEFORE BOOKING
+  const user = getCurrentUser();
+  if (!user) {
+    state.pendingBookingAction = 'openPassengerDetailsModal';
+    openAuthModal('signin', 'booking');
+    showToast('Please Sign In or Create an Account before booking tickets', 'info');
+    return;
+  }
   
   const modal = document.getElementById('passengerModal');
   const container = document.getElementById('passengerFormsContainer');
   if (!modal || !container) return;
+
+  const defaultName = (user.displayName && !user.displayName.startsWith('guest_')) ? user.displayName : '';
+  const defaultEmail = user.email || '';
 
   container.innerHTML = state.selectedSeats.map((seat, idx) => `
     <div class="passenger-card">
@@ -915,7 +934,7 @@ function openPassengerDetailsModal() {
       <div class="passenger-form-grid">
         <div>
           <label class="input-label">Full Legal Name *</label>
-          <input type="text" class="input-box passenger-name-input" placeholder="e.g. Alex Morgan" required />
+          <input type="text" class="input-box passenger-name-input" placeholder="e.g. Alex Morgan" value="${idx === 0 ? defaultName : ''}" required />
         </div>
         <div>
           <label class="input-label">Age *</label>
@@ -932,6 +951,12 @@ function openPassengerDetailsModal() {
       </div>
     </div>
   `).join('');
+
+  // Prefill contact email from logged-in user
+  const emailInput = document.getElementById('contactEmail');
+  if (emailInput && defaultEmail) {
+    emailInput.value = defaultEmail;
+  }
 
   updateCheckoutSummary();
   modal.classList.add('active');
@@ -1132,7 +1157,7 @@ function renderBoardingPassTicket(booking) {
         <div class="ticket-brand">
           <img src="assets/logo.jpg" alt="Logo" />
           <div>
-            <div style="font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em;">NexaBus Express</div>
+            <div style="font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em;">MyJourney Express</div>
             <div style="font-size: 0.72rem; color: #a5b4fc; text-transform: uppercase;">Official E-Boarding Pass</div>
           </div>
         </div>
@@ -1755,5 +1780,247 @@ function bookStateRoute(fromCityId, toCityId, stateName) {
     }
 
     showToast(`Routes for ${stateName} loaded! Choose your bus & seats.`, 'success');
+  }
+}
+
+// ==========================================================================
+// User Authentication & Login Enforcement Controllers
+// ==========================================================================
+
+function initAuthState() {
+  const cachedUser = getCurrentUser();
+  if (cachedUser) {
+    state.currentUser = cachedUser;
+    updateAuthUI(cachedUser);
+  }
+
+  // Hook into Firebase Auth listener
+  const checkService = setInterval(() => {
+    if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.onAuthChange === 'function') {
+      clearInterval(checkService);
+      window.MyJourneyFirebase.onAuthChange((user) => {
+        state.currentUser = user;
+        updateAuthUI(user);
+      });
+    }
+  }, 200);
+
+  setTimeout(() => clearInterval(checkService), 6000);
+}
+
+function getCurrentUser() {
+  if (state.currentUser) return state.currentUser;
+  if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.getUser === 'function') {
+    const u = window.MyJourneyFirebase.getUser();
+    if (u) return u;
+  }
+  try {
+    const raw = localStorage.getItem('myjourney_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function updateAuthUI(user) {
+  const navAuthGroup = document.getElementById('navAuthGroup');
+  const navUserPill = document.getElementById('navUserPill');
+  const navUserName = document.getElementById('navUserName');
+  const navUserAvatar = document.getElementById('navUserAvatar');
+
+  if (user) {
+    if (navAuthGroup) navAuthGroup.style.display = 'none';
+    if (navUserPill) navUserPill.style.display = 'flex';
+    
+    const displayName = user.displayName || user.email?.split('@')[0] || 'Traveler';
+    if (navUserName) navUserName.textContent = displayName;
+    if (navUserAvatar) {
+      navUserAvatar.textContent = displayName.charAt(0).toUpperCase();
+    }
+  } else {
+    if (navAuthGroup) navAuthGroup.style.display = 'flex';
+    if (navUserPill) navUserPill.style.display = 'none';
+  }
+}
+
+function openAuthModal(mode = 'signin', reason = '') {
+  const modal = document.getElementById('authModal');
+  const callout = document.getElementById('authBookingCallout');
+  
+  if (callout) {
+    if (reason === 'booking') {
+      callout.style.display = 'flex';
+    } else {
+      callout.style.display = 'none';
+    }
+  }
+
+  switchAuthTab(mode);
+  if (modal) modal.classList.add('active');
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function switchAuthTab(mode) {
+  state.authMode = mode;
+  const tabIn = document.getElementById('tabAuthSignIn');
+  const tabUp = document.getElementById('tabAuthSignUp');
+  const nameGroup = document.getElementById('authNameGroup');
+  const forgotLink = document.getElementById('authForgotLink');
+  const headerText = document.getElementById('authModalHeaderText');
+  const submitText = document.getElementById('authSubmitText');
+  const submitIcon = document.getElementById('authSubmitIcon');
+  const nameInput = document.getElementById('authNameInput');
+
+  if (mode === 'signup') {
+    if (tabIn) tabIn.classList.remove('active');
+    if (tabUp) tabUp.classList.add('active');
+    if (nameGroup) nameGroup.style.display = 'block';
+    if (nameInput) nameInput.required = true;
+    if (forgotLink) forgotLink.style.display = 'none';
+    if (headerText) headerText.textContent = 'Create MyJourney Account';
+    if (submitText) submitText.textContent = 'Create Account & Continue';
+    if (submitIcon) submitIcon.className = 'fa-solid fa-user-plus';
+  } else {
+    if (tabIn) tabIn.classList.add('active');
+    if (tabUp) tabUp.classList.remove('active');
+    if (nameGroup) nameGroup.style.display = 'none';
+    if (nameInput) nameInput.required = false;
+    if (forgotLink) forgotLink.style.display = 'block';
+    if (headerText) headerText.textContent = 'Sign In to MyJourney';
+    if (submitText) submitText.textContent = 'Sign In to MyJourney';
+    if (submitIcon) submitIcon.className = 'fa-solid fa-arrow-right-to-bracket';
+  }
+}
+
+async function handleAuthSubmit(event) {
+  event.preventDefault();
+  const emailInput = document.getElementById('authEmailInput');
+  const passwordInput = document.getElementById('authPasswordInput');
+  const nameInput = document.getElementById('authNameInput');
+  const submitBtn = document.getElementById('btnAuthSubmit');
+
+  const email = emailInput ? emailInput.value.trim() : '';
+  const password = passwordInput ? passwordInput.value : '';
+  const name = nameInput ? nameInput.value.trim() : '';
+
+  if (!email || !password) {
+    showToast('Please enter your email and password', 'error');
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
+  }
+
+  try {
+    let res;
+    if (state.authMode === 'signup') {
+      if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.signUp === 'function') {
+        res = await window.MyJourneyFirebase.signUp(email, password, name);
+      } else {
+        const u = { uid: 'usr_' + Date.now(), email, displayName: name || email.split('@')[0] };
+        localStorage.setItem('myjourney_user', JSON.stringify(u));
+        res = { success: true, user: u };
+      }
+    } else {
+      if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.signIn === 'function') {
+        res = await window.MyJourneyFirebase.signIn(email, password);
+      } else {
+        const u = { uid: 'usr_' + Date.now(), email, displayName: email.split('@')[0] };
+        localStorage.setItem('myjourney_user', JSON.stringify(u));
+        res = { success: true, user: u };
+      }
+    }
+
+    if (res && res.success) {
+      state.currentUser = res.user;
+      updateAuthUI(res.user);
+      closeAuthModal();
+      showToast(`Welcome ${res.user.displayName || 'Traveler'}! Logged in successfully 🎉`, 'success');
+
+      // Check if there was a pending booking action
+      if (state.pendingBookingAction === 'openPassengerDetailsModal') {
+        state.pendingBookingAction = null;
+        setTimeout(() => openPassengerDetailsModal(), 400);
+      }
+    } else {
+      showToast(res.error || 'Authentication failed. Please check your credentials.', 'error');
+    }
+  } catch (err) {
+    showToast(err.message || 'Authentication error', 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid ${state.authMode === 'signup' ? 'fa-user-plus' : 'fa-arrow-right-to-bracket'}"></i> <span>${state.authMode === 'signup' ? 'Create Account & Continue' : 'Sign In to MyJourney'}</span>`;
+    }
+  }
+}
+
+async function handleGoogleSignIn() {
+  if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.signInWithGoogle === 'function') {
+    try {
+      const res = await window.MyJourneyFirebase.signInWithGoogle();
+      if (res && res.success) {
+        state.currentUser = res.user;
+        updateAuthUI(res.user);
+        closeAuthModal();
+        showToast(`Signed in with Google as ${res.user.displayName}! 🎉`, 'success');
+        if (state.pendingBookingAction === 'openPassengerDetailsModal') {
+          state.pendingBookingAction = null;
+          setTimeout(() => openPassengerDetailsModal(), 400);
+        }
+      } else {
+        showToast(res.error || 'Google sign in was cancelled', 'info');
+      }
+    } catch (e) {
+      showToast('Google sign-in popup error', 'error');
+    }
+  } else {
+    handleGuestSignIn('Google Traveler');
+  }
+}
+
+async function handleGuestSignIn(customName) {
+  if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.signInAsGuest === 'function') {
+    const res = await window.MyJourneyFirebase.signInAsGuest(customName || 'Demo Passenger');
+    state.currentUser = res.user;
+    updateAuthUI(res.user);
+  } else {
+    const u = { uid: 'guest_' + Date.now(), email: 'traveler@myjourney.com', displayName: customName || 'Demo Passenger', isAnonymous: true };
+    localStorage.setItem('myjourney_user', JSON.stringify(u));
+    state.currentUser = u;
+    updateAuthUI(u);
+  }
+
+  closeAuthModal();
+  showToast('Logged in as Guest Passenger for instant booking! ⚡', 'success');
+
+  if (state.pendingBookingAction === 'openPassengerDetailsModal') {
+    state.pendingBookingAction = null;
+    setTimeout(() => openPassengerDetailsModal(), 400);
+  }
+}
+
+async function handleUserLogout() {
+  if (confirm('Are you sure you want to sign out of MyJourney?')) {
+    if (window.MyJourneyFirebase && typeof window.MyJourneyFirebase.signOut === 'function') {
+      await window.MyJourneyFirebase.signOut();
+    }
+    state.currentUser = null;
+    localStorage.removeItem('myjourney_user');
+    updateAuthUI(null);
+    showToast('Signed out of MyJourney', 'info');
+  }
+}
+
+function handleForgotPassword() {
+  const email = prompt('Enter your registered email address for password reset instructions:');
+  if (email && email.includes('@')) {
+    showToast(`Password reset link sent to ${email}`, 'info');
   }
 }

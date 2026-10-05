@@ -4,3 +4,7 @@ Thumbs.db
 *.log
 .env
 .env.local
+
+gh.exe
+git.exe
+
