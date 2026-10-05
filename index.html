@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexaBus Express | Luxury Intercity Coach Booking & Live Tracking</title>
+  <meta name="description" content="Book ultra-luxurious sleeper and executive intercity buses with live GPS tracking, instant boarding passes, and zero cancellation fee guarantee.">
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+  
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Three.js 3D Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Ambient Glow Effects -->
+  <div class="bg-ambient" aria-hidden="true">
+    <div class="glow-orb-1"></div>
+    <div class="glow-orb-2"></div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="navbar">
+    <div class="container nav-wrapper">
+      <!-- Brand Logo -->
+      <a href="#" class="brand-logo" id="brandLogoLink">
+        <img src="assets/logo.jpg" alt="NexaBus Logo" class="brand-icon">
+        <div class="brand-text">
+          <span class="brand-title">NEXABUS</span>
+          <span class="brand-tag">Luxury Transit</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <ul class="nav-menu">
+        <li><a href="#searchSection" class="nav-link active"><i class="fa-solid fa-magnifying-glass"></i> Search Buses</a></li>
+        <li><a href="#bus3dSection" class="nav-link"><i class="fa-solid fa-cube"></i> 3D Highway Bus</a></li>
+        <li><a href="#indianStatesSection" class="nav-link"><i class="fa-solid fa-map-location-dot"></i> Indian States</a></li>
+        <li><a href="javascript:void(0)" class="nav-link" id="navIndianHornsBtn" onclick="openIndianHornsModal()"><i class="fa-solid fa-bullhorn" style="color: #f59e0b;"></i> Indian Horns <span class="nav-horn-badge">HORN OK</span></a></li>
+        <li><a href="#" class="nav-link" id="navLiveTracker"><i class="fa-solid fa-satellite-dish"></i> Live GPS Radar</a></li>
+        <li><a href="#safetySection" class="nav-link"><i class="fa-solid fa-shield-heart"></i> Safety First</a></li>
+      </ul>
+
+      <!-- Action Items (Country, Currency, Theme, Firebase Status, Bookings) -->
+      <div class="nav-actions">
+        <!-- Firebase Cloud Database Status Badge -->
+        <div class="firebase-status-pill" id="firebaseStatusBadge" title="Connecting to Firebase Project: apps-cafd4...">
+          <span class="fb-dot fb-dot-online"></span>
+          <span class="fb-text"><i class="fa-solid fa-cloud"></i> Cloud DB</span>
+        </div>
+
+        <!-- Global Country Selector Button -->
+        <button class="btn-country" id="btnCountrySelect" aria-label="Select Country or Region" title="Change Country or Region">
+          <span class="country-flag" id="navCountryFlag">🇺🇸</span>
+          <span id="navCountryName">United States</span>
+          <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--text-dim); margin-left: 2px;"></i>
+        </button>
+
+        <!-- Currency Selector -->
+        <select class="currency-select" id="currencySelector" aria-label="Select Currency">
+          <option value="USD">USD ($)</option>
+          <option value="INR">INR (₹)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="CAD">CAD (C$)</option>
+          <option value="AUD">AUD (A$)</option>
+          <option value="JPY">JPY (¥)</option>
+          <option value="AED">AED (د.إ)</option>
+          <option value="BRL">BRL (R$)</option>
+        </select>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button class="btn-icon" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle Theme">
+          <i class="fa-solid fa-sun" id="themeIcon"></i>
+        </button>
+
+        <!-- My Bookings Button -->
+        <button class="btn-bookings" id="btnMyBookings" aria-label="My Bookings">
+          <i class="fa-solid fa-ticket"></i>
+          <span>My Tickets</span>
+          <span class="badge-count" id="bookingsBadge" style="display: none;">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section with Scenic Banner -->
+  <section class="hero-section" id="searchSection">
+    <div class="container">
+      <div class="hero-banner-card">
+        <div class="hero-overlay-content">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+            <div class="hero-pill" style="margin-bottom: 0;">
+              <i class="fa-solid fa-bolt-lightning"></i> Global Electric & Luxury Coach Network
+            </div>
+            <button class="country-hero-pill" id="heroCountryPill" title="Click to switch country">
+              <span id="heroCountryFlag">🇺🇸</span> <span id="heroCountryName">United States</span> <i class="fa-solid fa-arrow-right-arrow-left" style="font-size: 0.7rem; margin-left: 4px;"></i>
+            </button>
+          </div>
+          <h1 class="hero-title">Experience <span>First-Class</span> Coach Travel</h1>
+          <p class="hero-desc">
+            Reserve panoramic sleeper berths, live GPS tracking, premium Wi-Fi, and 100% sanitized comfort across top national corridors.
+          </p>
+          <div class="hero-features-chips">
+            <span class="chip"><i class="fa-solid fa-wifi"></i> 5G Gigabit Wi-Fi</span>
+            <span class="chip"><i class="fa-solid fa-plug"></i> In-Seat Power Sockets</span>
+            <span class="chip"><i class="fa-solid fa-person-shelter"></i> Free Lounge Access</span>
+            <span class="chip"><i class="fa-solid fa-certificate"></i> Instant Refund Guarantee</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Widget Container (Floating Glass Card) -->
+      <div class="search-widget-container">
+        <div class="search-card">
+          <!-- Trip Type Radios -->
+          <div class="search-trip-type">
+            <label class="radio-label">
+              <input type="radio" name="tripType" value="oneWay" checked>
+              <span>One Way Journey</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="tripType" value="roundTrip">
+              <span>Round Trip (10% Off)</span>
+            </label>
+          </div>
+
+          <!-- Search Inputs Grid -->
+          <div class="search-inputs-grid">
+            <!-- From City -->
+            <div class="input-group">
+              <span class="input-label"><i class="fa-solid fa-location-dot"></i> Origin City</span>
+              <select id="fromCitySelect" class="input-field" aria-label="Departure City"></select>
+            </div>
+
+            <!-- Swap Cities Button -->
+            <button class="btn-swap-cities" id="btnSwapCities" title="Swap Cities" aria-label="Swap Origin and Destination">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            </button>
+
+            <!-- To City -->
+            <div class="input-group">
+              <span class="input-label"><i class="fa-solid fa-location-crosshairs"></i> Destination</span>
+              <select id="toCitySelect" class="input-field" aria-label="Arrival City"></select>
+            </div>
+
+            <!-- Departure Date -->
+            <div class="input-group">
+              <span class="input-label"><i class="fa-regular fa-calendar-check"></i> Travel Date</span>
+              <input type="date" id="journeyDate" class="input-field" aria-label="Journey Date">
+            </div>
+
+            <!-- Return Date (Optional) -->
+            <div class="input-group">
+              <span class="input-label"><i class="fa-regular fa-calendar-plus"></i> Return (Optional)</span>
+              <input type="date" id="returnDate" class="input-field" aria-label="Return Date">
+            </div>
+
+            <!-- Search CTA -->
+            <button class="btn-search" id="btnSearchBuses" aria-label="Search Available Buses">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>Find Buses</span>
+            </button>
+          </div>
+
+          <!-- Quick Route Shortcuts (Updated dynamically by country) -->
+          <div class="quick-routes-row" id="quickRoutesRow">
+            <span class="quick-routes-label">Popular Corridors:</span>
+            <!-- Populated dynamically via app.js based on selected country -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3D Luxury Highway Coach Simulation Stage -->
+  <section class="bus3d-section" id="bus3dSection">
+    <div class="container">
+      <div class="bus3d-panel">
+        <div class="bus3d-header">
+          <div class="bus3d-title-group">
+            <div class="bus3d-badge-icon">
+              <i class="fa-solid fa-cube"></i>
+            </div>
+            <div>
+              <h2 class="bus3d-title">Live 3D Luxury Coach Highway Experience</h2>
+              <p class="bus3d-subtitle">Interactive 3D real-time simulation • Multi-axle Volvo 9600 cruising on the national expressway</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.75rem; color: var(--text-dim); background: var(--bg-tertiary); padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid var(--glass-border);">
+              <i class="fa-solid fa-arrows-up-down-left-right" style="color: var(--cyan-accent); margin-right: 4px;"></i> Drag to Orbit 360° • Scroll to Zoom
+            </span>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="bus3d-canvas-wrapper" id="bus3dCanvasContainer">
+          <!-- Floating Cockpit Dashboard Controls -->
+          <div class="bus3d-cockpit-overlay">
+            <!-- Left: Speedometer & Speed Chips -->
+            <div class="cockpit-widget">
+              <div class="speedometer-block">
+                <i class="fa-solid fa-gauge-high" style="color: var(--cyan-accent); font-size: 1.5rem;"></i>
+                <div>
+                  <div class="speed-digital" id="bus3dSpeedVal">90 km/h</div>
+                  <div class="speed-unit">Cruising Speed</div>
+                </div>
+              </div>
+              <div class="speed-chips-group">
+                <button class="speed-chip-btn" onclick="set3DBusSpeed(60, this)">60 km/h</button>
+                <button class="speed-chip-btn active" onclick="set3DBusSpeed(90, this)">90 km/h</button>
+                <button class="speed-chip-btn" onclick="set3DBusSpeed(120, this)">120 km/h</button>
+              </div>
+            </div>
+
+            <!-- Middle: Camera Angles -->
+            <div class="cockpit-widget" style="padding: 6px 12px;">
+              <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">View:</span>
+              <div class="camera-views-group">
+                <button class="cam-btn active" id="btnCamOrbit" onclick="set3DCameraView('orbit', this)"><i class="fa-solid fa-rotate"></i> 360° Orbit</button>
+                <button class="cam-btn" id="btnCamChase" onclick="set3DCameraView('chase', this)"><i class="fa-solid fa-car-rear"></i> Chase</button>
+                <button class="cam-btn" id="btnCamFront" onclick="set3DCameraView('front', this)"><i class="fa-solid fa-angles-right"></i> Low Front</button>
+                <button class="cam-btn" id="btnCamTop" onclick="set3DCameraView('top', this)"><i class="fa-solid fa-satellite"></i> Aerial</button>
+              </div>
+            </div>
+
+            <!-- Right: Interactive Tools (Headlights & Indian Truck Horns) -->
+            <div class="cockpit-widget" style="gap: 8px;">
+              <button class="cockpit-tool-btn" id="btnToggleHeadlights" onclick="toggle3DHeadlights()" title="Toggle Xenon Projector Headlights">
+                <i class="fa-solid fa-lightbulb" style="color: #38bdf8;"></i> Headlights
+              </button>
+              
+              <div class="cockpit-horn-dropdown-wrap">
+                <select class="cockpit-horn-select" id="cockpitHornSelect" onchange="set3DHornPreset(this.value)" title="Choose Truck Horn Tune">
+                  <option value="nagin">🐍 Nagin Melody</option>
+                  <option value="hornOk">📯 Horn OK Please</option>
+                  <option value="dhoom">⚡ Dhoom Machale</option>
+                  <option value="yaarKahan">🎵 Tere Jaisa Yaar</option>
+                  <option value="bhangra">🥁 Punjabi Bhangra</option>
+                  <option value="tataTrumpet">🚛 Tata 1613 Trumpet</option>
+                  <option value="volvoSymphony">🌌 Volvo B11R</option>
+                  <option value="reverseBuzzer">🚨 Reverse Chime</option>
+                </select>
+                <button class="cockpit-tool-btn horn" id="btnBusHorn" onclick="sound3DBusHorn()" title="Sound Indian Highway Air Horn (Press H)">
+                  <i class="fa-solid fa-bullhorn" style="color: #f59e0b;"></i> Honk Horn
+                </button>
+              </div>
+
+              <button class="cockpit-tool-btn" onclick="openIndianHornsModal()" title="Open Full Indian Horn Soundboard" style="background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.4); color: #f472b6;">
+                <i class="fa-solid fa-music"></i> Soundboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Section: Filter Sidebar + Bus Results -->
+  <main class="main-section">
+    <div class="container">
+      <!-- Section Header -->
+      <div class="results-header">
+        <div>
+          <h2 class="results-count-title">
+            Available Buses for <span id="resultsRouteHeader">New York → Boston</span> 
+            (<span id="resultsCountNumber">8</span> found)
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+            Real-time seat inventory updated 2 seconds ago. Choose your seat with visual deck preview.
+          </p>
+        </div>
+
+        <!-- Sorting Bar -->
+        <div class="results-sort-bar">
+          <button class="sort-btn active" data-sort="cheapest"><i class="fa-solid fa-arrow-down-1-9"></i> Cheapest</button>
+          <button class="sort-btn" data-sort="fastest"><i class="fa-solid fa-gauge-high"></i> Fastest</button>
+          <button class="sort-btn" data-sort="departure"><i class="fa-regular fa-clock"></i> Earliest</button>
+          <button class="sort-btn" data-sort="rating"><i class="fa-solid fa-star"></i> Top Rated</button>
+        </div>
+      </div>
+
+      <!-- Layout: Filter Panel + Bus Cards -->
+      <div class="layout-grid">
+        <!-- Sidebar Filters -->
+        <aside class="filters-panel">
+          <div class="filter-header-row">
+            <span class="filter-title"><i class="fa-solid fa-sliders"></i> Filter Results</span>
+            <button class="btn-reset-filters" id="btnResetFilters">Clear All</button>
+          </div>
+
+          <!-- Departure Time Slots Filter -->
+          <div class="filter-group">
+            <span class="filter-group-title">Departure Time</span>
+            <div class="time-slots-grid">
+              <div class="time-slot-btn" data-slot="morning">
+                <i class="fa-solid fa-sun"></i>
+                <span>Morning</span>
+                <span style="font-size: 0.65rem; color: var(--text-dim);">6 AM - 12 PM</span>
+              </div>
+              <div class="time-slot-btn" data-slot="afternoon">
+                <i class="fa-solid fa-cloud-sun"></i>
+                <span>Afternoon</span>
+                <span style="font-size: 0.65rem; color: var(--text-dim);">12 PM - 6 PM</span>
+              </div>
+              <div class="time-slot-btn" data-slot="evening">
+                <i class="fa-solid fa-cloud-moon"></i>
+                <span>Evening</span>
+                <span style="font-size: 0.65rem; color: var(--text-dim);">6 PM - 10 PM</span>
+              </div>
+              <div class="time-slot-btn" data-slot="night">
+                <i class="fa-solid fa-moon"></i>
+                <span>Night Sleeper</span>
+                <span style="font-size: 0.65rem; color: var(--text-dim);">After 10 PM</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Price Slider Filter -->
+          <div class="filter-group">
+            <div class="filter-group-title">
+              <span>Max Price</span>
+              <span id="maxPriceVal" style="color: var(--cyan-accent); font-family: var(--font-mono);">$100</span>
+            </div>
+            <div class="range-slider-container">
+              <input type="range" class="range-slider" id="priceRangeSlider" min="20" max="100" value="100">
+              <div class="range-values">
+                <span>$20</span>
+                <span>$100</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bus Operators Filter -->
+          <div class="filter-group">
+            <span class="filter-group-title">Preferred Operators</span>
+            <div class="filter-checkbox-list">
+              <label class="checkbox-item">
+                <span><input type="checkbox" class="operator-filter-check" value="NexaGlide"> NexaGlide Royal</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">4.9 ★</span>
+              </label>
+              <label class="checkbox-item">
+                <span><input type="checkbox" class="operator-filter-check" value="Zephyr"> Zephyr Cruiser</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">4.8 ★</span>
+              </label>
+              <label class="checkbox-item">
+                <span><input type="checkbox" class="operator-filter-check" value="EcoVolt"> EcoVolt Electric</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">EV 🌱</span>
+              </label>
+              <label class="checkbox-item">
+                <span><input type="checkbox" class="operator-filter-check" value="NightLiner"> NightLiner Sleeper</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">4.8 ★</span>
+              </label>
+              <label class="checkbox-item">
+                <span><input type="checkbox" class="operator-filter-check" value="SwiftRoute"> SwiftRoute Prime</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">4.6 ★</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Amenity Highlights -->
+          <div class="filter-group" id="amenitiesSection">
+            <span class="filter-group-title">Onboard Amenities</span>
+            <div class="filter-checkbox-list">
+              <label class="checkbox-item">
+                <span><i class="fa-solid fa-wifi" style="color: var(--cyan-accent); margin-right: 6px;"></i> Wi-Fi Hotspot</span>
+                <span style="color: var(--emerald-accent); font-size: 0.72rem;">Free</span>
+              </label>
+              <label class="checkbox-item">
+                <span><i class="fa-solid fa-plug-circle-bolt" style="color: var(--cyan-accent); margin-right: 6px;"></i> USB & Outlets</span>
+                <span style="color: var(--emerald-accent); font-size: 0.72rem;">All Seats</span>
+              </label>
+              <label class="checkbox-item">
+                <span><i class="fa-solid fa-restroom" style="color: var(--cyan-accent); margin-right: 6px;"></i> Clean Washroom</span>
+                <span style="color: var(--emerald-accent); font-size: 0.72rem;">Onboard</span>
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Bus Results List -->
+        <section class="bus-list-container" id="busResultsList" aria-label="Available Bus Listings">
+          <!-- Populated dynamically via app.js -->
+        </section>
+      </div>
+
+      <!-- Why Choose Us & Safety Section -->
+      <section class="live-tracker-panel" id="safetySection" style="margin-top: 50px;">
+        <div class="tracker-header">
+          <div>
+            <h3 style="font-size: 1.3rem; font-weight: 800;"><i class="fa-solid fa-shield-virus" style="color: var(--emerald-accent);"></i> Why Ride With NexaBus?</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Setting the benchmark for safety, luxury, and on-time performance.</p>
+          </div>
+          <button class="btn-bookings" onclick="openLiveTrackerModal()">
+            <i class="fa-solid fa-satellite"></i> View Global Radar Tracker
+          </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-top: 20px;">
+          <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+            <div style="font-size: 1.8rem; color: var(--cyan-accent); margin-bottom: 10px;"><i class="fa-solid fa-satellite-dish"></i></div>
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Live GPS Tracking</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Share your journey coordinates with family in real-time with emergency SOS alerts.</p>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+            <div style="font-size: 1.8rem; color: var(--rose-accent); margin-bottom: 10px;"><i class="fa-solid fa-person-breastfeeding"></i></div>
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Ladies Safe Seating</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Dedicated safe seat reservations paired only with verified female co-passengers.</p>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+            <div style="font-size: 1.8rem; color: var(--amber-accent); margin-bottom: 10px;"><i class="fa-solid fa-rotate-left"></i></div>
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Zero Cancellation Fee</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Cancel up to 6 hours before departure for a full instant refund with zero deductions.</p>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+            <div style="font-size: 1.8rem; color: var(--emerald-accent); margin-bottom: 10px;"><i class="fa-solid fa-leaf"></i></div>
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Eco-Friendly Fleet</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">40% of our network is powered by zero-emission electric supercoaches.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- All States & UTs of India Section -->
+      <section class="india-states-section" id="indianStatesSection">
+        <div class="states-header-row">
+          <div>
+            <div class="hero-pill" style="margin-bottom: 8px;">
+              <i class="fa-solid fa-flag"></i> Pan-India Intercity Express Network
+            </div>
+            <h2 class="states-title">
+              Explore Luxury Bus Routes Across <span>All 28 States & 8 Union Territories</span> of India
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+              Select any Indian state below to view its major bus terminals, top luxury sleeper corridors, and book directly.
+            </p>
+          </div>
+
+          <!-- Live State Search Input -->
+          <div class="states-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" class="states-search-input" id="indianStateSearchInput" placeholder="Search state or city (e.g. Maharashtra, Goa, Kerala, Himachal)..." oninput="filterIndianStates(this.value)">
+          </div>
+        </div>
+
+        <!-- Zone Filter Tabs -->
+        <div class="zone-filter-tabs">
+          <button class="zone-tab-btn active" onclick="filterIndianStatesByZone('all', this)">All States & UTs (36)</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('North', this)">North India</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('South', this)">South India</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('West', this)">West India</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('East', this)">East India</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('Central', this)">Central India</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('North-East', this)">North-East</button>
+          <button class="zone-tab-btn" onclick="filterIndianStatesByZone('Union Territory', this)">Union Territories</button>
+        </div>
+
+        <!-- States Cards Grid (Rendered dynamically) -->
+        <div class="states-cards-grid" id="indianStatesGrid">
+          <!-- Filled dynamically via app.js with all 28 states & 8 UTs -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Passenger Details Modal -->
+  <div class="modal-overlay" id="passengerModal" role="dialog" aria-modal="true" aria-labelledby="passengerModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="passengerModalTitle">
+          <i class="fa-solid fa-user-pen"></i> Passenger & Contact Details
+        </h3>
+        <button class="btn-close-modal" onclick="closePassengerModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Passenger Forms (Injected dynamically) -->
+        <div id="passengerFormsContainer"></div>
+
+        <!-- Contact Information -->
+        <div class="passenger-card" style="margin-top: 16px;">
+          <div class="passenger-card-header">
+            <span class="passenger-tag"><i class="fa-solid fa-paper-plane"></i> Ticket Delivery & Notification</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label class="input-label">Email Address *</label>
+              <input type="email" class="input-box" id="contactEmail" placeholder="your.name@example.com" value="alex.morgan@vibecoding.com" required>
+            </div>
+            <div>
+              <label class="input-label">Mobile Number *</label>
+              <input type="tel" class="input-box" id="contactPhone" placeholder="+1 (555) 000-0000" value="+1 (555) 392-8190" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Promo Code Input & Quick Coupons -->
+        <div style="margin-top: 18px;">
+          <label class="input-label"><i class="fa-solid fa-tags"></i> Have a Promo Code?</label>
+          <div class="promo-box-row">
+            <input type="text" class="input-box" id="couponCodeInput" placeholder="Enter coupon code (e.g. VIBE25)">
+            <button class="btn-apply-coupon" onclick="applyCoupon()">Apply Coupon</button>
+          </div>
+          <div class="coupon-suggestions">
+            <span class="coupon-chip" onclick="applyCoupon('VIBE25')">⚡ VIBE25 (25% OFF)</span>
+            <span class="coupon-chip" onclick="applyCoupon('FIRSTBUS')">🎁 FIRSTBUS (30% OFF)</span>
+            <span class="coupon-chip" onclick="applyCoupon('NEXA10')">🏷️ NEXA10 ($10 Flat)</span>
+            <span class="coupon-chip" onclick="applyCoupon('WEEKEND')">🌴 WEEKEND (15% OFF)</span>
+          </div>
+        </div>
+
+        <!-- Fare Breakdown in Modal -->
+        <div class="fare-breakdown" id="checkoutSummaryTotal">
+          <!-- Filled dynamically by updateCheckoutSummary() -->
+        </div>
+
+        <!-- Continue to Payment Button -->
+        <button class="btn-continue-booking" style="margin-top: 20px;" onclick="proceedToPayment()">
+          Proceed to Payment (<span id="payBtnTotal">$0</span>) <i class="fa-solid fa-lock" style="margin-left: 6px;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulated Payment Modal -->
+  <div class="modal-overlay" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="paymentModalTitle">
+          <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL Checkout
+        </h3>
+        <button class="btn-close-modal" onclick="closePaymentModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Payment Tabs -->
+        <div class="payment-tabs">
+          <button class="payment-tab-btn active" id="tabCardPay" onclick="setPaymentMethod('card')">
+            <i class="fa-regular fa-credit-card"></i> Card
+          </button>
+          <button class="payment-tab-btn" id="tabQrPay" onclick="setPaymentMethod('qr')">
+            <i class="fa-solid fa-qrcode"></i> Instant QR / UPI
+          </button>
+        </div>
+
+        <!-- Card View -->
+        <div id="cardPaymentSection">
+          <!-- Visual 3D Credit Card -->
+          <div class="credit-card-preview">
+            <div class="card-chip"></div>
+            <div class="card-number-display" id="dispCardNum">•••• •••• •••• 4242</div>
+            <div class="card-bottom-row">
+              <div>
+                <div style="font-size: 0.65rem; opacity: 0.8;">Card Holder</div>
+                <div style="font-weight: 700;">Alex Morgan</div>
+              </div>
+              <div>
+                <div style="font-size: 0.65rem; opacity: 0.8;">Expires</div>
+                <div style="font-weight: 700;">12/28</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Form -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <label class="input-label">Card Number</label>
+              <input type="text" class="input-box" value="4532 •••• •••• 4242" placeholder="1234 5678 9012 3456" readonly>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label class="input-label">Expiry (MM/YY)</label>
+                <input type="text" class="input-box" value="08/29" placeholder="MM/YY">
+              </div>
+              <div>
+                <label class="input-label">CVV / CVC</label>
+                <input type="password" class="input-box" value="888" placeholder="123" maxlength="4">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Code View -->
+        <div id="qrPaymentSection" style="display: none;" class="qr-payment-view">
+          <div class="qr-box">
+            <i class="fa-solid fa-qrcode" style="font-size: 7.5rem; color: #0f172a;"></i>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            Scan with Apple Pay, Google Pay, or any UPI app to complete booking instantly.
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--cyan-accent);">
+            Session expires in: <span id="qrTimer">04:59</span>
+          </div>
+        </div>
+
+        <button class="btn-continue-booking" id="btnSubmitPayment" style="margin-top: 24px;" onclick="submitPayment()">
+          <i class="fa-solid fa-lock"></i> Authorize & Confirm Booking
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation & Boarding Pass Modal -->
+  <div class="modal-overlay" id="confirmationModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmModalTitle">
+          <i class="fa-solid fa-circle-check" style="color: var(--emerald-accent);"></i> Booking Confirmed!
+        </h3>
+        <button class="btn-close-modal btn-print-hide" onclick="document.getElementById('confirmationModal').classList.remove('active')" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div id="boardingPassContent">
+          <!-- Filled dynamically by renderBoardingPassTicket() -->
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 12px; margin-top: 20px;" class="btn-print-hide">
+          <button class="btn-continue-booking" style="flex: 1; margin: 0; background: var(--primary);" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print / Save PDF
+          </button>
+          <button class="btn-continue-booking" style="flex: 1; margin: 0; background: var(--bg-tertiary); border: 1px solid var(--glass-border); color: var(--text-main);" onclick="document.getElementById('confirmationModal').classList.remove('active')">
+            Book Another Journey
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Bookings History Modal -->
+  <div class="modal-overlay" id="myBookingsModal" role="dialog" aria-modal="true" aria-labelledby="myBookingsTitle">
+    <div class="modal-dialog" style="max-width: 620px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="myBookingsTitle">
+            <i class="fa-solid fa-clock-rotate-left"></i> My Booked Tickets
+          </h3>
+          <div style="font-size: 0.75rem; color: #34d399; display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Synced with Firebase Cloud DB (apps-cafd4)
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn-apply-coupon" onclick="syncFirebaseBookings(true)" style="padding: 4px 10px; font-size: 0.75rem;" title="Fetch latest bookings from Firebase Cloud Firestore">
+            <i class="fa-solid fa-arrows-rotate" id="syncIcon"></i> Refresh Cloud
+          </button>
+          <button class="btn-close-modal" onclick="closeMyBookingsModal()" aria-label="Close dialog">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div id="myBookingsList">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live GPS Radar Tracker Modal -->
+  <div class="modal-overlay" id="liveTrackerModal" role="dialog" aria-modal="true" aria-labelledby="radarTrackerTitle">
+    <div class="modal-dialog" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="radarTrackerTitle">
+          <i class="fa-solid fa-satellite-dish" style="color: var(--cyan-accent);"></i> Live Fleet Telemetry Radar
+        </h3>
+        <button class="btn-close-modal" onclick="closeLiveTrackerModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="tracker-map-visual">
+          <div class="radar-sweep"></div>
+          
+          <div class="tracker-route-path">
+            <div class="tracker-route-progress">
+              <div class="tracker-bus-marker" title="Coach NX-482-B">
+                <i class="fa-solid fa-bus"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px;">
+          <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); text-align: center;">
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Current Speed</div>
+            <div style="font-size: 1.3rem; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-accent); margin-top: 4px;">64 mph</div>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); text-align: center;">
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Next Milestone</div>
+            <div style="font-size: 0.95rem; font-weight: 800; margin-top: 4px;">Hartford Express Hub</div>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); text-align: center;">
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Estimated Delay</div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: var(--emerald-accent); margin-top: 4px;">On Time (0m)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Country / Region Selector Modal -->
+  <div class="modal-overlay" id="countryModal" role="dialog" aria-modal="true" aria-labelledby="countryModalTitle">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="countryModalTitle">
+            <i class="fa-solid fa-globe" style="color: var(--cyan-accent);"></i> Select Your Country or Region
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            Choose your location to browse local intercity routes, official bus terminals, and native currencies.
+          </p>
+        </div>
+        <button class="btn-close-modal" onclick="closeCountryModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Live Country Filter Search Input -->
+        <div class="country-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="country-search-input" id="countrySearchInput" placeholder="Search your country (e.g. India, United Kingdom, Japan, Germany, Canada)..." />
+        </div>
+
+        <!-- Countries Grid (Rendered dynamically) -->
+        <div class="countries-grid" id="countriesGrid">
+          <!-- Filled by renderCountriesGrid() in app.js -->
+        </div>
+
+        <div style="margin-top: 20px; padding: 12px 16px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem;">
+          <span style="color: var(--text-muted);">
+            <i class="fa-solid fa-circle-info" style="color: var(--cyan-accent); margin-right: 6px;"></i>
+            You can change your country anytime from the header navbar.
+          </span>
+          <span style="font-weight: 700; color: var(--cyan-accent);">10 Global Regions Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indian Truck Horns Soundboard Modal -->
+  <div class="modal-overlay" id="indianHornsModal" role="dialog" aria-modal="true" aria-labelledby="indianHornsModalTitle">
+    <div class="modal-dialog" style="max-width: 820px;">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.25);">
+        <div>
+          <h3 class="modal-title" id="indianHornsModalTitle" style="color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-bullhorn" style="color: #f59e0b;"></i> Indian Highway & Truck Musical Air Horns
+          </h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            Authentic multi-pipe pressure horns, Nagin dance melodies, and highway overtakes procedurally synthesized in real-time.
+          </p>
+        </div>
+        <button class="btn-close-modal" onclick="closeIndianHornsModal()" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Desi Truck Banner & Live Equalizer -->
+        <div class="soundboard-hero-banner">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
+            <div>
+              <span style="font-size: 0.72rem; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa-solid fa-truck-front"></i> Grand Trunk Road Sound Studio
+              </span>
+              <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;" id="hornActiveTitle">
+                🐍 Nagin Dance 12-Pipe Melody
+              </h4>
+            </div>
+
+            <!-- Visual Equalizer Bars -->
+            <div class="soundboard-equalizer" id="soundboardEqualizer">
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+              <div class="eq-bar"></div>
+            </div>
+          </div>
+
+          <!-- Controls Bar inside Banner -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <button class="btn-float-honk" id="btnSoundboardMasterHonk" onclick="window.indianHorns && window.indianHorns.play()" style="padding: 8px 16px; font-size: 0.82rem;">
+                <i class="fa-solid fa-bullhorn"></i> Blow Active Horn (Press H)
+              </button>
+              <button class="btn-filter-reset" onclick="window.indianHorns && window.indianHorns.stopCurrent()" style="padding: 8px 14px; font-size: 0.8rem; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff;">
+                <i class="fa-solid fa-stop"></i> Stop
+              </button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1;">
+              <i class="fa-solid fa-volume-high" style="color: #fbbf24;"></i>
+              <span>Volume:</span>
+              <input type="range" min="0.1" max="1" step="0.05" value="0.85" style="width: 80px; accent-color: #f59e0b; cursor: pointer;" oninput="if(window.indianHorns) window.indianHorns.volume = parseFloat(this.value);" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 8+ Authentic Indian Horns Grid -->
+        <div class="horns-soundboard-grid" id="hornsSoundboardGrid">
+          <!-- Filled by renderIndianHornsSoundboard() in app.js -->
+        </div>
+
+        <!-- Truck Slogans Strip -->
+        <div style="margin-top: 20px; padding: 12px 16px; background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 0.8rem;">
+          <span style="color: #fbbf24; font-weight: 700; font-family: var(--font-mono);">
+            <i class="fa-solid fa-shield-halved" style="margin-right: 6px;"></i>
+            "बुरी नज़र वाले तेरा मुँह काला • USE DIPPER AT NIGHT • DEKHO MAGAR PYAR SE"
+          </span>
+          <span style="font-size: 0.75rem; color: var(--text-dim); background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">
+            Keyboard Shortcut: <kbd style="background: #1e293b; padding: 1px 6px; border-radius: 4px; color: #38bdf8; font-family: var(--font-mono);">H</kbd>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Indian Truck Horn Quick Action -->
+  <div class="floating-truck-horn-widget" id="floatingTruckHornBtn">
+    <div class="float-horn-quote" id="floatingHornQuote">HORN OK PLEASE 🚚</div>
+    <div class="float-horn-subtag">Press [H] to Honk</div>
+    <div class="float-horn-actions">
+      <button class="btn-float-honk" onclick="window.indianHorns && window.indianHorns.play()" title="Honk Active Indian Truck Horn (Shortcut: H)">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span class="float-horn-text">HONK!</span>
+      </button>
+      <button class="btn-float-menu" onclick="openIndianHornsModal()" title="Open Indian Highway Horns Soundboard">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Hub -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Application Footer -->
+  <footer class="app-footer">
+    <div class="container footer-content">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="assets/logo.jpg" alt="Logo" style="width: 28px; height: 28px; border-radius: 6px;">
+        <span style="font-weight: 700; color: var(--text-main);">NexaBus Technologies Inc.</span>
+        <span>&copy; 2026 All rights reserved.</span>
+      </div>
+      <ul class="footer-links">
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Carriage</a></li>
+        <li><a href="#">Operator Portal</a></li>
+        <li><a href="#">Contact 24/7 Support</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    // Payment Switcher Helper
+    function setPaymentMethod(method) {
+      const cardSec = document.getElementById('cardPaymentSection');
+      const qrSec = document.getElementById('qrPaymentSection');
+      const tabCard = document.getElementById('tabCardPay');
+      const tabQr = document.getElementById('tabQrPay');
+
+      if (method === 'card') {
+        cardSec.style.display = 'block';
+        qrSec.style.display = 'none';
+        tabCard.classList.add('active');
+        tabQr.classList.remove('active');
+      } else {
+        cardSec.style.display = 'none';
+        qrSec.style.display = 'flex';
+        tabCard.classList.remove('active');
+        tabQr.classList.add('active');
+      }
+    }
+  </script>
+
+  <!-- Application Scripts -->
+  <script type="module" src="js/firebase-service.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/indianHorns.js"></script>
+  <script src="js/bus3d.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

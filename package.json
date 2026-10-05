@@ -1,0 +1,19 @@
+{
+  "name": "nexabus-ticket-app",
+  "version": "1.0.0",
+  "description": "Next-Gen Luxury Bus Ticket Booking & Boarding Web Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "bus-ticket",
+    "booking",
+    "vanilla-js",
+    "responsive",
+    "travel"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}
