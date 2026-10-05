@@ -58,7 +58,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`=======================================================`);
-  console.log(`🚌 NexaBus Ticket Web Application is running!`);
+  console.log(`🚌 MyJourney Ticket Web Application is running!`);
   console.log(`🔗 Local URL: http://localhost:${PORT}`);
   console.log(`=======================================================`);
 });
